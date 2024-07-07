@@ -47,11 +47,8 @@ const DataTable: React.FC = () => {
 
   const total = (() => {
     let runningTotal = 0;
-    dataItems
-      .map((item) => item.number)
-      .reduce((a, b) => {
-        runningTotal += b;
-      }, 0);
+    dataItems.reduce((a, b) => runningTotal += b.number, 0);
+    return runningTotal;
   })();
 
   return (
@@ -179,7 +176,7 @@ const App: React.FC = () => {
   return (
     <div>
       <h1>User Profile Management</h1>
-      <UserProfileForm />
+      {/* <UserProfileForm /> */}
       <UserProfileList />
     </div>
   );
