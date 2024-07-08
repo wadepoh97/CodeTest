@@ -24,13 +24,6 @@ const UserProfileSchema = new Schema({
 
 const UserProfile = mongoose.model("UserProfile", UserProfileSchema);
 
-export interface IUserProfile {
-  _id?: string;
-  name: string;
-  email: string;
-  age?: number;
-  tags?: string[];
-}
 const router = express.Router();
 
 const connectDB = async () => {
@@ -54,7 +47,6 @@ const getProfileById = async (req: Request, res?: Response) => {
   if (allProfiles.some((profile) => profile._id === req.params.id)) {
     return allProfiles.some((profile) => profile._id === req.params.id);
   }
-  return "Hello world";
 };
 
 const createProfile = async (req: Request, res: Response) => {

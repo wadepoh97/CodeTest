@@ -1,5 +1,0 @@
-{
-  "watch": ["src"],
-  "ext": "ts",
-  "exec": "nodemon --exec node --loader ts-node/esm src/index.ts"
-}
