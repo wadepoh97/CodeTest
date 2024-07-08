@@ -1,8 +1,9 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { IUserProfile } from "../../backend";
+import { IUserProfile, DataItem, DataTableRow, DataUserList} from "./types";
+import DataTable, { TableColumn } from 'react-data-table-component';
 
-const API_URL = "http://localhost:3000/api/users";
+const API_URL = "http://localhost:8888/api/users";
 
 const getAllProfiles = async (): Promise<IUserProfile[]> => {
   const response = await axios.get(API_URL);
@@ -10,15 +11,12 @@ const getAllProfiles = async (): Promise<IUserProfile[]> => {
 };
 
 const createProfile = async (profile: IUserProfile): Promise<IUserProfile> => {
-  const response = await axios.post(API_URL, profile);
+  const response = await axios.post(`${API_URL}/create-user`, profile);
+  if (response.status === 200){
+    alert("User is created successfully");
+  }
   return response.data;
 };
-
-interface DataItem {
-  id: number;
-  value: string;
-  number: number;
-}
 
 // Generates a large array of data items for demonstration purposes, do not need to modify.
 const generateDataItems = (count: number): DataItem[] => {
@@ -29,12 +27,12 @@ const generateDataItems = (count: number): DataItem[] => {
   }));
 };
 
-const DataTable: React.FC = () => {
+const DataTableComponet: React.FC = () => {
   const [dataItems, setDataItems] = useState<DataItem[]>(
     generateDataItems(1000)
   );
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   const processedItems = (() => {
     return dataItems.reduce<DataItem[]>((acc, item) => {
       if (item.value.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -47,39 +45,55 @@ const DataTable: React.FC = () => {
 
   const total = (() => {
     let runningTotal = 0;
-    dataItems
-      .map((item) => item.number)
-      .reduce((a, b) => {
-        runningTotal += b;
-      }, 0);
+    dataItems.reduce((a, b) => (runningTotal += b.number), 0);
+    return runningTotal;
   })();
 
+  const columns:TableColumn<DataTableRow>[] = [
+    {
+      name: 'ID',
+      selector: row => row.id,
+      sortable: true,
+    },
+    {
+      name: 'Value',
+      selector: row => row.value,
+      sortable: true
+    },
+    {
+      name: 'Number',
+      selector: row => row.number,
+      sortable: true,
+    },
+  ];
+
+  const data = processedItems.map((item) => {
+    return {
+      id: item.id,
+      value: item.value,
+      number: item.number
+    };
+  });
+
   return (
-    <div>
-      <input
+    <div className="container">
+      
+      <DataTable title="Data List" columns={columns} data={data} pagination />
+      
+      {/* <input
         type="text"
         placeholder="Filter items..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-      />
+      /> */}
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Value</th>
-            <th>Number</th>
+            <th colSpan={2}>Total</th>
           </tr>
         </thead>
         <tbody>
-          {processedItems.map((item) => (
-            <tr key={Math.random()}>
-              <td>{item.id}</td>
-              <td>{item.value}</td>
-              <td>{item.number}</td>
-            </tr>
-          ))}
           <tr>
-            <td colSpan={2}>Total</td>
             <td>{total}</td>
           </tr>
         </tbody>
@@ -107,70 +121,121 @@ const UserProfileForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Name:</label>
-        <input
-          type="text"
-          name="name"
-          value={profile.name}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label>Email:</label>
-        <input
-          type="email"
-          name="email"
-          value={profile.email}
-          onChange={handleChange}
-        />
-      </div>
-      <div>
-        <label>Age:</label>
-        <input
-          type="number"
-          name="age"
-          value={profile.age}
-          onChange={handleChange}
-        />
-      </div>
-      {/* Add inputs for tags if needed */}
-      <button type="submit">Submit</button>
-    </form>
+    <div className="container-md">
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label htmlFor="exampleInputEmail1" className="form-label">
+            Email Address
+          </label>
+          <input
+            type="email"
+            name="email"
+            className="form-control"
+            id="exampleInputEmail1"
+            aria-describedby="emailHelp"
+            onChange={handleChange}
+            value={profile.email}
+            required={true}
+          />
+          <div id="emailHelp" className="form-text">
+            We'll never share your email with anyone else.
+          </div>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="exampleInputName" className="form-label">
+            Name
+          </label>
+          <input
+            type="text"
+            name="name"
+            className="form-control"
+            id="exampleInputName"
+            value={profile.name}
+            onChange={handleChange}
+            required={true}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label" htmlFor="exampleInputAge">
+            Age
+          </label>
+          <input
+            type="number"
+            name="age"
+            className="form-control"
+            id="exampleInputAge"
+            value={profile.age}
+            onChange={handleChange}
+            required={true}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label" htmlFor="exampleInputTag">
+            Tag
+          </label>
+          <input
+            type="text"
+            name="tags"
+            className="form-control"
+            id="exampleInputTags"
+            onChange={handleChange}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary">
+          Submit
+        </button>
+      </form>
+    </div>
   );
 };
 
 const UserProfileList: React.FC = () => {
-  const [profiles, setProfiles] = useState<IUserProfile[]>([]);
+  const [columns, setColumns] = useState<TableColumn<DataUserList>[]>([]);
+  const [data, setData] = useState<DataUserList[]>([]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
       const fetchedProfiles = await getAllProfiles();
-      setProfiles(fetchedProfiles);
-    };
+      
+      const columns:TableColumn<DataUserList>[] = [
+        {
+          name: 'Name',
+          selector: row => row.name,
+          sortable: true,
+        },
+        {
+          name: 'Email',
+          selector: row => row.email,
+          sortable: true
+        },
+        {
+          name: 'Tags',
+          selector: row => row.tags,
+          sortable: true,
+        },
+      ];
+    
+      const data = fetchedProfiles.map((profile) => {
+        return {
+          name: profile.name,
+          email: profile.email,
+          tags: (profile.tags) ? profile.tags.join(","):"NO Tags"
+        };
+      });
 
+      setColumns(columns);
+      setData(data);
+    }
     fetchProfiles();
   }, []);
 
   return (
     <div>
       <h2>Task 1: User Profiles</h2>
-      <ul>
-        {profiles.map((profile) => (
-          <li key={profile._id}>
-            {profile.name} - {profile.email}
-            {/* Display tags if present */}
-            {profile.tags &&
-              profile.tags.map((tag, index) => (
-                <span key={index}> {tag} </span>
-              ))}
-          </li>
-        ))}
-      </ul>
+      <DataTable title="User Profiles" columns={columns} data={data} pagination />
       <hr />
       <h2>Task 2: Data table</h2>
-      <DataTable />
+      <DataTableComponet />
     </div>
   );
 };
@@ -179,8 +244,58 @@ const App: React.FC = () => {
   return (
     <div>
       <h1>User Profile Management</h1>
-      <UserProfileForm />
-      <UserProfileList />
+
+      <ul className="nav nav-tabs" id="myTab" role="tablist">
+        <li className="nav-item" role="presentation">
+          <button
+            className="nav-link active"
+            id="home-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#home-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="home-tab-pane"
+            aria-selected="true"
+          >
+            User Profile Form
+          </button>
+        </li>
+        <li className="nav-item" role="presentation">
+          <button
+            className="nav-link"
+            id="profile-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#profile-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="profile-tab-pane"
+            aria-selected="false"
+          >
+            User Profile List
+          </button>
+        </li>
+      </ul>
+
+      <div className="tab-content" id="myTabContent">
+        <div
+          className="tab-pane fade show active"
+          id="home-tab-pane"
+          role="tabpanel"
+          aria-labelledby="home-tab"
+          tabIndex={0}
+        >
+          <UserProfileForm />
+        </div>
+        <div
+          className="tab-pane fade"
+          id="profile-tab-pane"
+          role="tabpanel"
+          aria-labelledby="profile-tab"
+          tabIndex={0}
+        >
+          <UserProfileList />
+        </div>
+      </div>
     </div>
   );
 };
