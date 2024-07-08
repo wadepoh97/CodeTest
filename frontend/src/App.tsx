@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { IUserProfile, DataItem } from "./types";
+import { IUserProfile, DataItem, DataTableRow, DataUserList} from "./types";
+import DataTable, { TableColumn } from 'react-data-table-component';
 
 const API_URL = "http://localhost:8888/api/users";
 
@@ -11,6 +12,9 @@ const getAllProfiles = async (): Promise<IUserProfile[]> => {
 
 const createProfile = async (profile: IUserProfile): Promise<IUserProfile> => {
   const response = await axios.post(`${API_URL}/create-user`, profile);
+  if (response.status === 200){
+    alert("User is created successfully");
+  }
   return response.data;
 };
 
@@ -23,7 +27,7 @@ const generateDataItems = (count: number): DataItem[] => {
   }));
 };
 
-const DataTable: React.FC = () => {
+const DataTableComponet: React.FC = () => {
   const [dataItems, setDataItems] = useState<DataItem[]>(
     generateDataItems(1000)
   );
@@ -45,32 +49,51 @@ const DataTable: React.FC = () => {
     return runningTotal;
   })();
 
+  const columns:TableColumn<DataTableRow>[] = [
+    {
+      name: 'ID',
+      selector: row => row.id,
+      sortable: true,
+    },
+    {
+      name: 'Value',
+      selector: row => row.value,
+      sortable: true
+    },
+    {
+      name: 'Number',
+      selector: row => row.number,
+      sortable: true,
+    },
+  ];
+
+  const data = processedItems.map((item) => {
+    return {
+      id: item.id,
+      value: item.value,
+      number: item.number
+    };
+  });
+
   return (
     <div className="container">
-      <input
+      
+      <DataTable title="Data List" columns={columns} data={data} pagination />
+      
+      {/* <input
         type="text"
         placeholder="Filter items..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <table id="tableExample" className="display" style={{ width: 100 }}>
+      /> */}
+      <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Value</th>
-            <th>Number</th>
+            <th colSpan={2}>Total</th>
           </tr>
         </thead>
         <tbody>
-          {processedItems.map((item) => (
-            <tr key={Math.random()}>
-              <td>{item.id}</td>
-              <td>{item.value}</td>
-              <td>{item.number}</td>
-            </tr>
-          ))}
           <tr>
-            <td colSpan={2}>Total</td>
             <td>{total}</td>
           </tr>
         </tbody>
@@ -112,6 +135,7 @@ const UserProfileForm: React.FC = () => {
             aria-describedby="emailHelp"
             onChange={handleChange}
             value={profile.email}
+            required={true}
           />
           <div id="emailHelp" className="form-text">
             We'll never share your email with anyone else.
@@ -128,6 +152,7 @@ const UserProfileForm: React.FC = () => {
             id="exampleInputName"
             value={profile.name}
             onChange={handleChange}
+            required={true}
           />
         </div>
         <div className="mb-3">
@@ -141,6 +166,7 @@ const UserProfileForm: React.FC = () => {
             id="exampleInputAge"
             value={profile.age}
             onChange={handleChange}
+            required={true}
           />
         </div>
         <div className="mb-3">
@@ -164,35 +190,52 @@ const UserProfileForm: React.FC = () => {
 };
 
 const UserProfileList: React.FC = () => {
-  const [profiles, setProfiles] = useState<IUserProfile[]>([]);
+  const [columns, setColumns] = useState<TableColumn<DataUserList>[]>([]);
+  const [data, setData] = useState<DataUserList[]>([]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
       const fetchedProfiles = await getAllProfiles();
-      setProfiles(fetchedProfiles);
-    };
+      
+      const columns:TableColumn<DataUserList>[] = [
+        {
+          name: 'Name',
+          selector: row => row.name,
+          sortable: true,
+        },
+        {
+          name: 'Email',
+          selector: row => row.email,
+          sortable: true
+        },
+        {
+          name: 'Tags',
+          selector: row => row.tags,
+          sortable: true,
+        },
+      ];
+    
+      const data = fetchedProfiles.map((profile) => {
+        return {
+          name: profile.name,
+          email: profile.email,
+          tags: (profile.tags) ? profile.tags.join(","):"NO Tags"
+        };
+      });
 
+      setColumns(columns);
+      setData(data);
+    }
     fetchProfiles();
   }, []);
 
   return (
     <div>
       <h2>Task 1: User Profiles</h2>
-      <ul>
-        {profiles.map((profile) => (
-          <li key={profile._id}>
-            {profile.name} - {profile.email}
-            {/* Display tags if present */}
-            {profile.tags &&
-              profile.tags.map((tag, index) => (
-                <span key={index}> {tag} </span>
-              ))}
-          </li>
-        ))}
-      </ul>
+      <DataTable title="User Profiles" columns={columns} data={data} pagination />
       <hr />
       <h2>Task 2: Data table</h2>
-      <DataTable />
+      <DataTableComponet />
     </div>
   );
 };
@@ -201,8 +244,6 @@ const App: React.FC = () => {
   return (
     <div>
       <h1>User Profile Management</h1>
-      {/* <UserProfileForm /> */}
-      {/* <UserProfileList /> */}
 
       <ul className="nav nav-tabs" id="myTab" role="tablist">
         <li className="nav-item" role="presentation">

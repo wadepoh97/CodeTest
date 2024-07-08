@@ -11,3 +11,15 @@ export interface DataItem {
     value: string;
     number: number;
 }
+export interface DataTableRow {
+	id: number;
+	value: string;
+	number: number;
+}
+
+export interface DataUserList { 
+    name: string;
+    email: string;
+    tags: string;
+
+}
